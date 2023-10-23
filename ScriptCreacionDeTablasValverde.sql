@@ -339,3 +339,42 @@ insert into luchas values
 (null, 2, 79, 196, 231, 15, 79, 65, 76);
 
 select * from luchas;
+
+/* Script de Vistas */
+
+create or replace view luchadores_contratados as
+(select l.nombre, e.estado_fisico, e.fecha_inicio_contrato, e.fin_de_contrato
+from equipo_de_luchadores e join luchadores l on (l.id_luchador = e.id_luchador));
+
+select * from luchadores_contratados;
+
+create or replace view capacidad_del_evento as
+(select e.id_evento, fecha_de_evento, l.precio_alquiler, l.capacidad
+from eventos e join locales l on (e.id_local = l.id_local));
+
+select * from capacidad_del_evento;
+
+create or replace view productor_de_lucha as
+(select l.id_lucha, ev.fecha_de_evento, e.nombre
+from eventos ev join luchas l on (ev.id_evento = l.id_evento)
+join empleados e on (l.id_productor = e.id_empleado));
+
+select * from productor_de_lucha;
+
+create or replace view luchadores_asignados as
+(select e.fecha_de_evento, l.id_lucha, l1.nombre as nombre_luchador_1, l2.nombre as nombre_luchador_2, l3.nombre as nombre_luchador_3, l4.nombre as nombre_luchador_4
+from eventos e join luchas l on (e.id_evento = l.id_evento)
+left join luchadores l1 on (l.id_luchador1 = l1.id_luchador)
+left join luchadores l2 on (l.id_luchador2 = l2.id_luchador)
+left join luchadores l3 on (l.id_luchador3 = l3.id_luchador)
+left join luchadores l4 on (l.id_luchador4 = l4.id_luchador));
+
+select * from luchadores_asignados;
+
+create or replace view luchadores_libres as
+(select l.nombre, l.email
+from luchadores l where l.id_disponibilidad = 1);
+
+select * from luchadores_libres;
+
+
