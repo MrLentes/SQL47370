@@ -377,4 +377,57 @@ from luchadores l where l.id_disponibilidad = 1);
 
 select * from luchadores_libres;
 
+/* Script de creacion de funciones */
+
+use wrestlingco;
+
+delimiter //
+create function numero_de_luchas(id_luchador int) returns int
+deterministic
+begin
+    declare contador_de_luchas int;
+    
+    select count(*) into contador_de_luchas
+    from Luchas
+    where id_luchador1 = id_luchador
+       or id_luchador2 = id_luchador
+       or id_luchador3 = id_luchador
+       or id_luchador4 = id_luchador;
+    
+    return contador_de_luchas;
+end //
+
+select numero_de_luchas(2);
+select numero_de_luchas(53);
+
+select * from luchas where id_luchador1 = 2 or id_luchador2 = 2 or id_luchador3 = 2 or id_luchador4 = 2;
+select * from luchas where id_luchador1 = 53 or id_luchador2 = 53 or id_luchador3 = 53 or id_luchador4 = 53;
+
+/* En esta funcion le pasa el id_luchador y cuenta en cuantas luchas estuvo; dejo como ejemplo el luchador con id 2 y el con id 53 */
+
+delimiter //
+create function dias_restantes_de_contrato(id_luchador1 int) returns int
+deterministic
+begin
+    declare fin_contrato date;
+    declare dias_restantes int;
+    
+    select fin_de_contrato into fin_contrato
+    from equipo_de_luchadores
+    where id_luchador1 = id_luchador;
+    
+    set dias_restantes = datediff(fin_contrato, curdate());
+    
+    return dias_restantes;
+end //
+
+select dias_restantes_de_contrato(2);
+select dias_restantes_de_contrato(53);
+
+select id_luchador, fin_de_contrato from equipo_de_luchadores where id_luchador = 2;
+select id_luchador, fin_de_contrato from equipo_de_luchadores where id_luchador = 53;
+
+/* En esta funcion le pasas el id_luchador y te devuelve el numero de dias restantes de contrato de ese luchador*/
+
+
 
