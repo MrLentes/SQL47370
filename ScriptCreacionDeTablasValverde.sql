@@ -383,7 +383,7 @@ use wrestlingco;
 
 delimiter //
 create function numero_de_luchas(id_luchador int) returns int
-deterministic
+reads sql data
 begin
     declare contador_de_luchas int;
     
@@ -407,7 +407,7 @@ select * from luchas where id_luchador1 = 53 or id_luchador2 = 53 or id_luchador
 
 delimiter //
 create function dias_restantes_de_contrato(id_luchador1 int) returns int
-deterministic
+reads sql data
 begin
     declare fin_contrato date;
     declare dias_restantes int;
@@ -428,6 +428,78 @@ select id_luchador, fin_de_contrato from equipo_de_luchadores where id_luchador 
 select id_luchador, fin_de_contrato from equipo_de_luchadores where id_luchador = 53;
 
 /* En esta funcion le pasas el id_luchador y te devuelve el numero de dias restantes de contrato de ese luchador*/
+
+/* Fin de las funciones */
+
+/* STORED PROCEDURES */
+
+use wrestlingco;
+
+/*create procedure cambiar_nombre_de_empresa(in id_de_la_empresa int, in nuevo_nombre varchar(20))
+begin
+	update disponibilidad
+    set tipo_disponible = nuevo_nombre where id_disponibilidad = id_de_la_empresa;
+end // Le agrego una verificacion para que no metan un id que no existe*/
+
+delimiter //
+
+create procedure cambiar_nombre_de_empresa(in id_de_la_empresa int, in nuevo_nombre varchar(20))
+begin
+	declare id_existente int;
+    select count(*) into id_existente from disponibilidad where id_disponibilidad = id_de_la_empresa;
+    if id_existente > 0 then    
+		update disponibilidad
+		set tipo_disponible = nuevo_nombre where id_disponibilidad = id_de_la_empresa;
+        select 'Nombre Actualizado ', nuevo_nombre as cambio_de_nombre;
+	else
+		select 'El ID de esa empresa no existe' as fallo_el_cambio;
+	end if;
+end //
+
+drop procedure cambiar_nombre_de_empresa;
+
+call cambiar_nombre_de_empresa(2, "CSW");
+
+call cambiar_nombre_de_empresa(21, "CCW");
+
+select * from disponibilidad;
+
+/* En este procedimiento puedes cambiar el nombre de una empresa dandole un nuevo nombre y su ID en caso que cambien su nombre o siglas */
+
+delimiter //
+
+create procedure vencimiento_de_visas()
+begin
+    declare id_de_luchador int;
+    declare fecha_vencimiento_visa date;
+    declare dias_restantes int;    
+    declare cursor_1 cursor for select id_luchador, vencimiento_visa from equipo_de_luchadores where vencimiento_visa is not null;    
+    set dias_restantes = 0;  
+        
+    open cursor_1;    
+    luchador_loop: LOOP
+        fetch cursor_1 into id_de_luchador, fecha_vencimiento_visa;
+        if (fecha_vencimiento_visa is null) then
+            leave luchador_loop;
+        end if;        
+        set dias_restantes = datediff(fecha_vencimiento_visa, curdate());        
+        select concat('La visa del luchador de ID ', id_de_luchador, ' vence en: ', dias_restantes, ' dias') as Vencimiento;
+    end loop;    
+    close cursor_1;
+end //
+
+call vencimiento_de_visas();
+
+drop procedure vencimiento_de_visas;
+
+select id_luchador, vencimiento_visa from equipo_de_luchadores where vencimiento_visa is not null;
+
+/* En este SP se busca los luchadores contratados con visa y se determina cuantos dias le queda hasta el vencimiento */
+/* Pase dos horas aprendiendo loop para hacerlo */
+
+
+
+
 
 
 
