@@ -497,9 +497,91 @@ select id_luchador, vencimiento_visa from equipo_de_luchadores where vencimiento
 /* En este SP se busca los luchadores contratados con visa y se determina cuantos dias le queda hasta el vencimiento */
 /* Pase dos horas aprendiendo loop para hacerlo */
 
+use wrestlingco;
 
+/* Nuevas tablas para usar triggers */
 
+create table ResultadosDeEventos(
+	id_RDE int primary key not null unique auto_increment,
+    id_evento int not null,
+    costo_alquiler float not null,
+    capacidad int not null,
+    asistencia int not null,
+    precio_entrada float not null,
+    mercancia_vendida float default 0,
+    recaudacion float not null,
+    foreign key (id_evento) references Eventos(id_evento)
+);
 
+/* Esta tabla es para llevar cuentas de los eventos realizados */
+
+/* TRIGGERS */
+
+delimiter //
+
+create trigger CalcularRecaudacion
+before insert on ResultadosDeEventos
+for each row
+begin
+    set new.recaudacion = (new.asistencia * new.precio_entrada) + new.mercancia_vendida;
+end;
+
+//
+
+select * from capacidad_del_evento; /* Me ayudo de una view para poner los datos */
+
+insert into ResultadosDeEventos (id_evento, costo_alquiler, capacidad, asistencia, precio_entrada, mercancia_vendida) values(1, 620, 165, 150, 42.5, 2350);
+
+select * from ResultadosDeEventos;
+
+/* Este trigger calcula la recaudacion que realizo el evento */
+
+/* Este siguiente trigger me causo muchos problemas plantearlo si hay una mejor forma porfavor diganmela */
+
+delimiter //
+
+create trigger LlenarDatosDelLocal
+before insert on ResultadosDeEventos
+for each row
+begin
+	declare alquiler float;
+    declare capacidad_maxima int;
+    declare id_l int;
+    select id_local into id_l from eventos where id_evento = new.id_evento;
+    select precio_alquiler, capacidad into alquiler, capacidad_maxima from Locales where id_local = id_l;
+    
+    set new.costo_alquiler = alquiler;
+    set new.capacidad = capacidad_maxima;
+end;
+
+//
+
+select * from capacidad_del_evento;
+
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (2, 240, 45, 3000);
+
+select * from ResultadosDeEventos;
+
+/* En este trigger uso el id_evento para obtener datos del id_local para llenar las columnas costo_alquiler y capacidad con los datos del local que uso el evento */
+
+delimiter //
+
+create trigger ActualizarDisponibilidad
+after insert on Equipo_De_Luchadores
+for each row
+begin
+	update Luchadores set id_disponibilidad = 2 where id_luchador = new.id_luchador;
+end;
+
+//
+
+select * from luchadores where id_disponibilidad = 2;
+
+insert into equipo_de_luchadores values (5, '2023-11-05', '2026-11-05', 150000, "Perfecto", null, 71, 69);
+
+select * from equipo_de_luchadores;
+
+/* En este trigger se cambia el id_disponibilidad de un luchador a 2 , el id de la empresa, cuando se lo contrata a nuestra empresa,  */
 
 
 
