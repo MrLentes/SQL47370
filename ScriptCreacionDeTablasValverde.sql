@@ -342,6 +342,8 @@ select * from luchas;
 
 /* Script de Vistas */
 
+use wrestlingco;
+
 create or replace view luchadores_contratados as
 (select l.nombre, e.estado_fisico, e.fecha_inicio_contrato, e.fin_de_contrato
 from equipo_de_luchadores e join luchadores l on (l.id_luchador = e.id_luchador));
@@ -349,8 +351,9 @@ from equipo_de_luchadores e join luchadores l on (l.id_luchador = e.id_luchador)
 select * from luchadores_contratados;
 
 create or replace view capacidad_del_evento as
-(select e.id_evento, fecha_de_evento, l.precio_alquiler, l.capacidad
-from eventos e join locales l on (e.id_local = l.id_local));
+(select e.id_evento, fecha_de_evento, l.precio_alquiler, l.capacidad, RDE.asistencia
+from eventos e join locales l on (e.id_local = l.id_local)
+left join ResultadosDeEventos RDE on (e.id_evento = RDE.id_evento));
 
 select * from capacidad_del_evento;
 
@@ -403,7 +406,7 @@ select numero_de_luchas(53);
 select * from luchas where id_luchador1 = 2 or id_luchador2 = 2 or id_luchador3 = 2 or id_luchador4 = 2;
 select * from luchas where id_luchador1 = 53 or id_luchador2 = 53 or id_luchador3 = 53 or id_luchador4 = 53;
 
-/* En esta funcion le pasa el id_luchador y cuenta en cuantas luchas estuvo; dejo como ejemplo el luchador con id 2 y el con id 53 */
+/* En esta funcion le pasa el id_luchador y cuenta en cuantas luchas estuvo; dejo como ejemplo el luchador con id 2 y el id 53 */
 
 delimiter //
 create function dias_restantes_de_contrato(id_luchador1 int) returns int
@@ -583,5 +586,26 @@ select * from equipo_de_luchadores;
 
 /* En este trigger se cambia el id_disponibilidad de un luchador a 2 , el id de la empresa, cuando se lo contrata a nuestra empresa,  */
 
+/* Fin de los Triggers */
 
+/* Sublenguaje DCL */
 
+use mysql;
+
+create user 'Ryan_Leonardo_P'@'localhost' identified by 'pr_3494_RL';
+
+/* Se crea un usuario para el Productor General que va a tener solo permisos de lectura */
+
+grant select on wrestlingco.* to 'Ryan_Leonardo_P'@'localhost';
+
+/* Se le entrega unicamente permisos de lectura sobre nuestro schema */
+
+create user 'Murray_Jacob_A'@'localhost' IDENTIFIED BY 'ad_2374_MJ';
+
+/* Se crea un usuario para el Director de Operaciones que va a tener mas permisos */
+
+grant select, insert, update on wrestlingco.* to 'Murray_Jacob_A'@'localhost';
+
+/* Se le da permisos de lectura, insercion y modificacion sobre nuestro schema */
+
+select * from mysql.user;
