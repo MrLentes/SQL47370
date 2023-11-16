@@ -609,3 +609,61 @@ grant select, insert, update on wrestlingco.* to 'Murray_Jacob_A'@'localhost';
 /* Se le da permisos de lectura, insercion y modificacion sobre nuestro schema */
 
 select * from mysql.user;
+
+/* Sublenguaje TCL */
+
+use wrestlingco;
+
+select @@autocommit;
+
+set autocommit = 0;
+
+start transaction;
+
+delete from luchadores where id_luchador between 100 and 110;
+
+select * from luchadores;
+
+select * from luchadores where id_luchador between 100 and 110;
+
+/*rollback;*/
+
+commit;
+
+/* En esta transaccion se elimina los luchadores que tienen id entre 100 y 110, usando la tabla luchadores */
+
+start transaction;
+
+select * from ResultadosDeEventos;
+
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (3, 230, 40, 2170);
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (4, 180, 45, 1580);
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (5, 260, 45, 3750);
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (6, 160, 35, 3050);
+
+savepoint Marzo_22;
+
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (7, 835, 50, 23100);
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (8, 390, 40, 4170);
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (9, 600, 45, 3800);
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (10, 560, 45, 4444);
+
+savepoint Enero_23;
+
+select * from ResultadosDeEventos;
+
+/*release savepoint Marzo_22;*/
+
+commit;
+
+
+
+
+
+
+
+
+
+
+
+
