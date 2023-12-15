@@ -387,7 +387,7 @@ from luchadores l where l.id_disponibilidad = 1);
 select * from luchadores_libres;
 
 create or replace view ganancias as
-(select r.id_evento, e.fecha_de_evento, r.capacidad, r.asistencia, r.resultado as ganancia
+(select r.id_evento, e.fecha_de_evento, r.capacidad, r.precio_entrada, r.asistencia, r.mercancia_vendida, r.costo_total, r.resultado as ganancia
 from ResultadosDeEventos r join Eventos e on (r.id_evento = e.id_evento));
 
 select * from ganancias;
