@@ -185,7 +185,7 @@ insert into equipo_de_luchadores values
 (253, '2022-09-05', '2025-09-05', 150000, "Perfecto", '2025-10-08', 88, 74),
 (256, '2022-09-05', '2026-09-05', 200000, "Perfecto", '2026-07-12', 88, 69),
 (287, '2022-09-05', '2024-09-05', 100000, "Perfecto", null, 88, 74),
-(31, '2022-09-05', '2022-09-05', 150000, "Lesionado", '2023-12-20', 88, 69),
+(31, '2022-09-05', '2024-09-05', 150000, "Lesionado", '2023-12-20', 88, 69),
 (298, '2023-01-15', '2025-01-15', 120000, "Perfecto", null, 88, 78),
 (10, '2023-01-15', '2026-01-15', 180000, "Perfecto", null, 71, 74),
 (161, '2023-01-15', '2027-01-15', 240000, "Perfecto", null, 88, 78),
@@ -351,7 +351,7 @@ select * from luchas;
 use wrestlingco;
 
 create or replace view luchadores_contratados as
-(select l.nombre, e.estado_fisico, e.fecha_inicio_contrato, e.fin_de_contrato
+(select l.nombre, e.id_luchador, e.estado_fisico, e.fecha_inicio_contrato, e.fin_de_contrato, e.precio_de_contrato
 from equipo_de_luchadores e join luchadores l on (l.id_luchador = e.id_luchador));
 
 select * from luchadores_contratados;
@@ -385,6 +385,12 @@ create or replace view luchadores_libres as
 from luchadores l where l.id_disponibilidad = 1);
 
 select * from luchadores_libres;
+
+create or replace view ganancias as
+(select r.id_evento, e.fecha_de_evento, r.capacidad, r.asistencia, r.resultado as ganancia
+from ResultadosDeEventos r join Eventos e on (r.id_evento = e.id_evento));
+
+select * from ganancias;
 
 /* Script de creacion de funciones */
 
@@ -530,27 +536,6 @@ create table ResultadosDeEventos(
 
 /* TRIGGERS */
 
-delimiter //
-
-create trigger CalcularGanancia
-before insert on ResultadosDeEventos
-for each row
-begin
-    set new.recaudacion = (new.asistencia * new.precio_entrada) + new.mercancia_vendida;
-    set new.costo_total = new.costo_alquiler + new.costo_permiso + new.costo_seguro;
-    set new.resultado = new.recaudacion - new.costo_total;
-end;
-
-//
-
-select * from capacidad_del_evento; /* Me ayudo de una view para poner los datos */
-
-insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values(1, 150, 42.5, 1250);
-
-select * from ResultadosDeEventos;
-
-/* Este trigger calcula la recaudacion que realizo el evento */
-
 /* Este siguiente trigger me causo muchos problemas plantearlo si hay una mejor forma porfavor diganmela */
 
 delimiter //
@@ -610,6 +595,27 @@ end;
 //
 
 /* Este trigger sieve para calcular el permiso y el seguro en caso que no este incluido con el local */
+
+delimiter //
+
+create trigger CalcularGanancia
+before insert on ResultadosDeEventos
+for each row
+begin
+    set new.recaudacion = (new.asistencia * new.precio_entrada) + new.mercancia_vendida;
+    set new.costo_total = new.costo_alquiler + new.costo_permiso + new.costo_seguro;
+    set new.resultado = new.recaudacion - new.costo_total;
+end;
+
+//
+
+select * from capacidad_del_evento; /* Me ayudo de una view para poner los datos */
+
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values(1, 150, 42.5, 1250);
+
+select * from ResultadosDeEventos;
+
+/* Este trigger calcula la recaudacion que realizo el evento */
 
 delimiter //
 
