@@ -57,6 +57,12 @@ create table Eventos(
     foreign key (id_local) references Locales(id_local)
 );
 
+/* Borro las columnas de precios que pasan a la tabla Resultados */
+alter table Eventos
+drop column precio_seguro;
+alter table Eventos
+drop column precio_permiso;
+
 create table Luchas(
 	id_lucha int primary key not null unique auto_increment,
     id_luchador1 int not null,
@@ -508,11 +514,15 @@ create table ResultadosDeEventos(
 	id_RDE int primary key not null unique auto_increment,
     id_evento int not null,
     costo_alquiler float not null,
+    costo_permiso float default 0,
+    costo_seguro float default 0,
     capacidad int not null,
     asistencia int not null,
     precio_entrada float not null,
     mercancia_vendida float default 0,
     recaudacion float not null,
+    costo_total float not null,
+    resultado float not null,
     foreign key (id_evento) references Eventos(id_evento)
 );
 
@@ -522,18 +532,20 @@ create table ResultadosDeEventos(
 
 delimiter //
 
-create trigger CalcularRecaudacion
+create trigger CalcularGanancia
 before insert on ResultadosDeEventos
 for each row
 begin
     set new.recaudacion = (new.asistencia * new.precio_entrada) + new.mercancia_vendida;
+    set new.costo_total = new.costo_alquiler + new.costo_permiso + new.costo_seguro;
+    set new.resultado = new.recaudacion - new.costo_total;
 end;
 
 //
 
 select * from capacidad_del_evento; /* Me ayudo de una view para poner los datos */
 
-insert into ResultadosDeEventos (id_evento, costo_alquiler, capacidad, asistencia, precio_entrada, mercancia_vendida) values(1, 620, 165, 150, 42.5, 2350);
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values(1, 150, 42.5, 1250);
 
 select * from ResultadosDeEventos;
 
@@ -550,6 +562,7 @@ begin
 	declare alquiler float;
     declare capacidad_maxima int;
     declare id_l int;
+    
     select id_local into id_l from eventos where id_evento = new.id_evento;
     select precio_alquiler, capacidad into alquiler, capacidad_maxima from Locales where id_local = id_l;
     
@@ -561,11 +574,42 @@ end;
 
 select * from capacidad_del_evento;
 
-insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (2, 240, 45, 3000);
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values(2, 180, 40, 1035);
 
 select * from ResultadosDeEventos;
 
 /* En este trigger uso el id_evento para obtener datos del id_local para llenar las columnas costo_alquiler y capacidad con los datos del local que uso el evento */
+
+delimiter //
+
+create trigger Costos
+before insert on ResultadosDeEventos
+for each row
+begin
+	declare seguro bool;
+    declare permiso bool;
+    declare capacidad_m int;
+    declare id_l int;
+    
+    select id_local into id_l from eventos where id_evento = new.id_evento;
+    select asegurado, permiso_incluido, capacidad into seguro, permiso, capacidad_m from Locales where id_local = id_l;
+    
+    if(seguro = true) then
+		set new.costo_seguro = floor(capacidad_m / 100) * 100;
+        /* el costo del seguro es 100 dolares por cada 100 personas si son 150 es 100 si son 295 es 200 por eso uso floor */
+	else
+		set new.costo_seguro = 0;
+	end if;
+    if(permiso = true) then
+		set new.costo_permiso = 75;
+	else
+		set new.costo_permiso = 0;
+	end if;
+end;
+
+//
+
+/* Este trigger sieve para calcular el permiso y el seguro en caso que no este incluido con el local */
 
 delimiter //
 
@@ -588,73 +632,24 @@ select * from equipo_de_luchadores;
 
 /* Fin de los Triggers */
 
-/* Sublenguaje DCL */
-
-use mysql;
-
-create user 'Ryan_Leonardo_P'@'localhost' identified by 'pr_3494_RL';
-
-/* Se crea un usuario para el Productor General que va a tener solo permisos de lectura */
-
-grant select on wrestlingco.* to 'Ryan_Leonardo_P'@'localhost';
-
-/* Se le entrega unicamente permisos de lectura sobre nuestro schema */
-
-create user 'Murray_Jacob_A'@'localhost' IDENTIFIED BY 'ad_2374_MJ';
-
-/* Se crea un usuario para el Director de Operaciones que va a tener mas permisos */
-
-grant select, insert, update on wrestlingco.* to 'Murray_Jacob_A'@'localhost';
-
-/* Se le da permisos de lectura, insercion y modificacion sobre nuestro schema */
-
-select * from mysql.user;
-
-/* Sublenguaje TCL */
-
-use wrestlingco;
-
-select @@autocommit;
-
-set autocommit = 0;
-
-start transaction;
-
-delete from luchadores where id_luchador between 100 and 110;
-
-select * from luchadores;
-
-select * from luchadores where id_luchador between 100 and 110;
-
-/*rollback;*/
-
-commit;
-
-/* En esta transaccion se elimina los luchadores que tienen id entre 100 y 110, usando la tabla luchadores */
-
-start transaction;
-
 select * from ResultadosDeEventos;
 
-insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (3, 230, 40, 2170);
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (3, 230, 40, 1730);
 insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (4, 180, 45, 1580);
-insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (5, 260, 45, 3750);
-insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (6, 160, 35, 3050);
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (5, 260, 45, 2230);
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (6, 160, 35, 1750);
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (7, 835, 50, 8300);
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (8, 390, 40, 2170);
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (9, 600, 45, 2850);
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (10, 560, 45, 2145);
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (11, 450, 40, 2745);
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (12, 500, 37.5, 3005);
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (13, 1085, 60, 15405);
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (14, 860, 42.5, 4100);
+insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (15, 850, 40, 3750);
 
-savepoint Marzo_22;
 
-insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (7, 835, 50, 23100);
-insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (8, 390, 40, 4170);
-insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (9, 600, 45, 3800);
-insert into ResultadosDeEventos (id_evento, asistencia, precio_entrada, mercancia_vendida) values (10, 560, 45, 4444);
 
-savepoint Enero_23;
-
-select * from ResultadosDeEventos;
-
-/*release savepoint Marzo_22;*/
-
-commit;
 
 
 
